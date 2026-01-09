@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+
+{% block title %}Analysis Management - Admin{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h2><i class="fas fa-chart-line"></i> Analysis Management</h2>
+            <p class="text-muted">{{ total }} total analyses</p>
+        </div>
+    </div>
+    
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-filter"></i> Filters</h5>
+                </div>
+                <div class="card-body">
+                    <form method="GET">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <label class="form-label">User Email</label>
+                                <input type="text" class="form-control" name="user" 
+                                       value="{{ user_filter }}" placeholder="Search by email...">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Result</label>
+                                <select class="form-select" name="result">
+                                    <option value="">All Results</option>
+                                    <option value="Real" {{ 'selected' if result_filter == 'Real' }}>Real</option>
+                                    <option value="Fake" {{ 'selected' if result_filter == 'Fake' }}>Fake</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Date From</label>
+                                <input type="date" class="form-control" name="date_from" value="{{ date_from }}">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Date To</label>
+                                <input type="date" class="form-control" name="date_to" value="{{ date_to }}">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">&nbsp;</label>
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fas fa-search"></i> Filter
+                                </button>
+                            </div>
+                            <div class="col-md-1">
+                                <label class="form-label">&nbsp;</label>
+                                <a href="{{ url_for('admin_analyses') }}" class="btn btn-secondary w-100">
+                                    <i class="fas fa-times"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Export Button -->
+    <div class="row mb-3">
+        <div class="col-12 text-end">
+            <a href="{{ url_for('admin_export', type='analyses') }}" class="btn btn-secondary">
+                <i class="fas fa-download"></i> Export Analyses
+            </a>
+        </div>
+    </div>
+    
+    <!-- Analyses Table -->
+    <div class="row">
+        <div class="col-12">
+            {% if analyses %}
+            <div class="card">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>User</th>
+                                    <th>File</th>
+                                    <th>Type</th>
+                                    <th>Result</th>
+                                    <th>Confidence</th>
+                                    <th>Trust Score</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for analysis in analyses %}
+                                <tr>
+                                    <td>
+                                        <small>{{ analysis.user_email }}</small>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-{{ 'image' if analysis.file_type == 'image' else 'video' }} me-2 text-muted"></i>
+                                            <span>{{ analysis.filename }}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ analysis.file_type.upper() }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ 'danger' if analysis.result == 'Fake' else 'success' }}">
+                                            {{ analysis.result }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="confidence-meter mb-1" style="width: 80px;">
+                                            <div class="confidence-fill confidence-{{ 'high' if analysis.confidence > 0.7 else 'medium' if analysis.confidence > 0.4 else 'low' }}" 
+                                                 style="width: {{ analysis.confidence * 100 }}%"></div>
+                                        </div>
+                                        <small>{{ "%.1f"|format(analysis.confidence * 100) }}%</small>
+                                    </td>
+                                    <td>{{ "%.1f"|format(analysis.trust_score * 100) }}%</td>
+                                    <td>
+                                        <small>{{ analysis.created_at }}</small>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{{ url_for('view_analysis', analysis_id=analysis.id) }}" 
+                                               class="btn btn-sm btn-outline-primary" title="View Details">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <button class="btn btn-sm btn-outline-danger" 
+                                                    onclick="deleteAnalysis({{ analysis.id }}, '{{ analysis.filename }}')"
+                                                    title="Delete Analysis">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pagination -->
+            {% if total_pages > 1 %}
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('admin_analyses', page=page-1, **request.args) }}">Previous</a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for p in range(1, total_pages + 1) %}
+                        {% if p == page %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ p }}</span>
+                        </li>
+                        {% elif p <= 3 or p >= total_pages - 2 or (p >= page - 2 and p <= page + 2) %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin_analyses', page=p, **request.args) }}">{{ p }}</a>
+                        </li>
+                        {% elif p == 4 or p == total_pages - 3 %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('admin_analyses', page=page+1, **request.args) }}">Next</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            
+            {% else %}
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                    <h5>No analyses found</h5>
+                    <p class="text-muted">Try adjusting your filter criteria.</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function deleteAnalysis(analysisId, filename) {
+    if (confirm(`Are you sure you want to delete analysis "${filename}"? This action cannot be undone.`)) {
+        fetch(`/admin/analysis/${analysisId}/delete`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast(data.message, 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast(data.message, 'error');
+            }
+        })
+        .catch(error => {
+            showToast('An error occurred', 'error');
+        });
+    }
+}
+
+function showToast(message, type) {
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} toast-notification`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => toast.remove(), 3000);
+}
+</script>
+
+<style>
+.toast-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+}
+</style>
+{% endblock %}

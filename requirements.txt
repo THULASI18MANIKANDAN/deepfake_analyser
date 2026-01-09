@@ -1,0 +1,10 @@
+Flask==2.3.3
+Werkzeug==2.3.7
+Pillow==10.0.1
+reportlab==4.0.4
+smtplib
+email
+matplotlib==3.7.2
+numpy==1.24.3
+tensorflow==2.13.0
+opencv-python==4.8.0.76

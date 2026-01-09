@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}Analysis Results - Deepfake Analyzer{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h2><i class="fas fa-chart-line"></i> Analysis Results</h2>
+            <p class="text-muted">{{ results|length }} files analyzed successfully</p>
+        </div>
+    </div>
+    
+    <div class="row mb-3">
+        <div class="col-12">
+            <a href="{{ url_for('upload') }}" class="btn btn-primary">
+                <i class="fas fa-upload"></i> Analyze More Files
+            </a>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+                <i class="fas fa-tachometer-alt"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+    
+    <div class="row">
+        {% for result in results %}
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">{{ result.filename }}</h6>
+                    <span class="badge bg-{{ 'danger' if result.result == 'Fake' else 'success' }}">
+                        {{ result.result }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6">
+                            <small class="text-muted">Confidence</small>
+                            <div class="confidence-meter mb-2">
+                                <div class="confidence-fill confidence-{{ 'high' if result.confidence > 0.7 else 'medium' if result.confidence > 0.4 else 'low' }}" 
+                                     style="width: {{ result.confidence * 100 }}%"></div>
+                            </div>
+                            <strong>{{ "%.1f"|format(result.confidence * 100) }}%</strong>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">Trust Score</small>
+                            <div class="confidence-meter mb-2">
+                                <div class="confidence-fill confidence-{{ 'high' if result.trust_score > 0.7 else 'medium' if result.trust_score > 0.4 else 'low' }}" 
+                                     style="width: {{ result.trust_score * 100 }}%"></div>
+                            </div>
+                            <strong>{{ "%.1f"|format(result.trust_score * 100) }}%</strong>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <a href="{{ url_for('view_analysis', analysis_id=result.id) }}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-eye"></i> View Details
+                        </a>
+                        <button class="btn btn-sm btn-outline-warning bookmark-btn" data-id="{{ result.id }}">
+                            <i class="fas fa-bookmark"></i> Bookmark
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Summary Statistics -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-pie"></i> Batch Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <h4 class="text-primary">{{ results|length }}</h4>
+                            <small class="text-muted">Total Files</small>
+                        </div>
+                        <div class="col-md-3">
+                            <h4 class="text-success">{{ results|selectattr('result', 'equalto', 'Real')|list|length }}</h4>
+                            <small class="text-muted">Real Files</small>
+                        </div>
+                        <div class="col-md-3">
+                            <h4 class="text-danger">{{ results|selectattr('result', 'equalto', 'Fake')|list|length }}</h4>
+                            <small class="text-muted">Fake Files</small>
+                        </div>
+                        <div class="col-md-3">
+                            <h4 class="text-info">{{ "%.1f"|format((results|sum(attribute='confidence') / results|length) * 100) }}%</h4>
+                            <small class="text-muted">Avg Confidence</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Bookmark functionality
+document.querySelectorAll('.bookmark-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const analysisId = this.dataset.id;
+        
+        fetch(`/bookmark/${analysisId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                this.classList.toggle('btn-outline-warning');
+                this.classList.toggle('btn-warning');
+                
+                // Show toast notification
+                const toast = document.createElement('div');
+                toast.className = 'toast-notification';
+                toast.textContent = data.message;
+                document.body.appendChild(toast);
+                
+                setTimeout(() => {
+                    toast.remove();
+                }, 3000);
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    });
+});
+</script>
+
+<style>
+.toast-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #28a745;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    z-index: 1000;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+}
+</style>
+{% endblock %}

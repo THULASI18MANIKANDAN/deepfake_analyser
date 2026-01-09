@@ -1,0 +1,294 @@
+{% extends "base.html" %}
+
+{% block title %}Analysis Details - Deepfake Analyzer{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item active">Analysis Details</li>
+                </ol>
+            </nav>
+            
+            <h2><i class="fas fa-microscope"></i> Analysis Details</h2>
+            <p class="text-muted">{{ analysis.filename }} - Analyzed on {{ analysis.created_at }}</p>
+        </div>
+    </div>
+    
+    <!-- Main Results -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-bar"></i> Detection Results</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="text-center mb-3">
+                                <div class="display-1 mb-2">
+                                    <span class="badge bg-{{ 'danger' if analysis.result == 'Fake' else 'success' }} fs-1">
+                                        {{ analysis.result }}
+                                    </span>
+                                </div>
+                                <h5>Detection Result</h5>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Confidence Score</label>
+                                <div class="confidence-meter mb-1">
+                                    <div class="confidence-fill confidence-{{ 'high' if analysis.confidence > 0.7 else 'medium' if analysis.confidence > 0.4 else 'low' }}" 
+                                         style="width: {{ analysis.confidence * 100 }}%"></div>
+                                </div>
+                                <small>{{ "%.1f"|format(analysis.confidence * 100) }}%</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Accuracy</label>
+                                <div class="confidence-meter mb-1">
+                                    <div class="confidence-fill confidence-high" 
+                                         style="width: {{ analysis.accuracy * 100 }}%"></div>
+                                </div>
+                                <small>{{ "%.1f"|format(analysis.accuracy * 100) }}%</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Trust Score</label>
+                                <div class="confidence-meter mb-1">
+                                    <div class="confidence-fill confidence-{{ 'high' if analysis.trust_score > 0.7 else 'medium' if analysis.trust_score > 0.4 else 'low' }}" 
+                                         style="width: {{ analysis.trust_score * 100 }}%"></div>
+                                </div>
+                                <small>{{ "%.1f"|format(analysis.trust_score * 100) }}%</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-info-circle"></i> File Information</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tr>
+                            <td><strong>Filename:</strong></td>
+                            <td>{{ analysis.filename }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Type:</strong></td>
+                            <td><span class="badge bg-secondary">{{ analysis.file_type.upper() }}</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Analyzed:</strong></td>
+                            <td>{{ analysis.created_at }}</td>
+                        </tr>
+                        {% if analysis_data.processing_time %}
+                        <tr>
+                            <td><strong>Processing Time:</strong></td>
+                            <td>{{ "%.1f"|format(analysis_data.processing_time) }}s</td>
+                        </tr>
+                        {% endif %}
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Visualization -->
+    {% if analysis.file_type == 'image' and analysis_data.heatmap %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-fire"></i> Heatmap Analysis</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Red areas indicate regions with higher probability of manipulation</p>
+                    <div id="heatmapContainer" class="text-center">
+                        <canvas id="heatmapCanvas" width="400" height="400" style="border: 1px solid #ddd;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    {% if analysis.file_type == 'video' and analysis_data.timeline %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-line"></i> Timeline Analysis</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Confidence levels across video frames</p>
+                    <canvas id="timelineChart" width="800" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Educational Tips -->
+    {% if analysis_data.tips %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-graduation-cap"></i> Educational Insights</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        {% for tip in analysis_data.tips %}
+                        <li class="mb-2">
+                            <i class="fas fa-lightbulb text-warning"></i>
+                            {{ tip }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Additional Analysis Details -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-cogs"></i> Technical Details</h5>
+                </div>
+                <div class="card-body">
+                    {% if analysis.file_type == 'image' %}
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Suspicious Regions</h6>
+                                {% if analysis_data.suspicious_regions %}
+                                    <ul class="list-unstyled">
+                                        {% for region in analysis_data.suspicious_regions %}
+                                        <li><i class="fas fa-exclamation-triangle text-warning"></i> {{ region.title() }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% else %}
+                                    <p class="text-muted">No suspicious regions detected</p>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Additional Checks</h6>
+                                <ul class="list-unstyled">
+                                    <li>
+                                        <i class="fas fa-{{ 'times text-danger' if analysis_data.artifacts_detected else 'check text-success' }}"></i>
+                                        Artifacts: {{ 'Detected' if analysis_data.artifacts_detected else 'None' }}
+                                    </li>
+                                    <li>
+                                        <i class="fas fa-{{ 'times text-danger' if analysis_data.exif_inconsistencies else 'check text-success' }}"></i>
+                                        EXIF Data: {{ 'Inconsistent' if analysis_data.exif_inconsistencies else 'Consistent' }}
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    {% elif analysis.file_type == 'video' %}
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Video Analysis</h6>
+                                <ul class="list-unstyled">
+                                    <li><strong>Frame Count:</strong> {{ analysis_data.frame_count }}</li>
+                                    <li><strong>Suspicious Frames:</strong> {{ analysis_data.suspicious_frames|length }}</li>
+                                    <li><strong>Temporal Issues:</strong> {{ 'Yes' if analysis_data.temporal_inconsistencies else 'No' }}</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Audio-Video Sync</h6>
+                                <p class="mb-0">
+                                    <span class="badge bg-{{ 'success' if analysis_data.audio_video_sync == 'good' else 'warning' }}">
+                                       {{ analysis_data.audio_video_sync|default("unknown")|title }}
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+{% if analysis.file_type == 'image' and analysis_data.heatmap %}
+// Render heatmap
+const canvas = document.getElementById('heatmapCanvas');
+const ctx = canvas.getContext('2d');
+const heatmapData = {{ analysis_data.heatmap | tojson }};
+
+const cellWidth = canvas.width / heatmapData[0].length;
+const cellHeight = canvas.height / heatmapData.length;
+
+for (let i = 0; i < heatmapData.length; i++) {
+    for (let j = 0; j < heatmapData[i].length; j++) {
+        const intensity = heatmapData[i][j];
+        const red = Math.floor(255 * intensity);
+        const blue = Math.floor(255 * (1 - intensity));
+        
+        ctx.fillStyle = `rgb(${red}, 0, ${blue})`;
+        ctx.fillRect(j * cellWidth, i * cellHeight, cellWidth, cellHeight);
+    }
+}
+{% endif %}
+
+{% if analysis.file_type == 'video' and analysis_data.timeline %}
+// Render timeline chart
+const timelineCanvas = document.getElementById('timelineChart');
+const timelineCtx = timelineCanvas.getContext('2d');
+const timelineData = {{ analysis_data.timeline | tojson }};
+
+new Chart(timelineCtx, {
+    type: 'line',
+    data: {
+        labels: timelineData.map(d => d.time.toFixed(1) + 's'),
+        datasets: [{
+            label: 'Confidence',
+            data: timelineData.map(d => d.confidence),
+            borderColor: 'rgb(75, 192, 192)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            tension: 0.1
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 1,
+                title: {
+                    display: true,
+                    text: 'Confidence Score'
+                }
+            },
+            x: {
+                title: {
+                    display: true,
+                    text: 'Time (seconds)'
+                }
+            }
+        },
+        plugins: {
+            title: {
+                display: true,
+                text: 'Frame-by-Frame Confidence Analysis'
+            }
+        }
+    }
+});
+{% endif %}
+</script>
+{% endblock %}

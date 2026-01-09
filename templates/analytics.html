@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics - Deepfake Analyzer{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item active">Analytics</li>
+                </ol>
+            </nav>
+
+            <h2><i class="fas fa-chart-pie"></i> Analytics Overview</h2>
+            <p class="text-muted">Trends and statistics of deepfake detections</p>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5>Total Analyses</h5>
+                    <h3>{{ stats.total }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5>Fake Detected</h5>
+                    <h3 class="text-danger">{{ stats.fake }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5>Authentic</h5>
+                    <h3 class="text-success">{{ stats.real }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5>Average Confidence</h5>
+                    <h3>{{ "%.1f"|format(stats.avg_confidence * 100) }}%</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-calendar-alt"></i> Monthly Analysis</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="monthlyChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-calendar-week"></i> Weekly Analysis</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="weeklyChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Yearly Trend -->
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-line"></i> Yearly Trend</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="yearlyChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const monthlyData = {{ monthly_data | tojson }};
+const weeklyData = {{ weekly_data | tojson }};
+const yearlyData = {{ yearly_data | tojson }};
+
+// Monthly chart
+new Chart(document.getElementById('monthlyChart'), {
+    type: 'bar',
+    data: {
+        labels: monthlyData.map(d => d.label),
+        datasets: [
+            {
+                label: 'Fake',
+                data: monthlyData.map(d => d.fake),
+                backgroundColor: 'rgba(255, 99, 132, 0.6)'
+            },
+            {
+                label: 'Real',
+                data: monthlyData.map(d => d.real),
+                backgroundColor: 'rgba(75, 192, 192, 0.6)'
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            title: {
+                display: true,
+                text: 'Monthly Fake vs Real Analysis'
+            }
+        }
+    }
+});
+
+// Weekly chart
+new Chart(document.getElementById('weeklyChart'), {
+    type: 'bar',
+    data: {
+        labels: weeklyData.map(d => d.label),
+        datasets: [
+            {
+                label: 'Fake',
+                data: weeklyData.map(d => d.fake),
+                backgroundColor: 'rgba(255, 99, 132, 0.6)'
+            },
+            {
+                label: 'Real',
+                data: weeklyData.map(d => d.real),
+                backgroundColor: 'rgba(75, 192, 192, 0.6)'
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            title: {
+                display: true,
+                text: 'Weekly Fake vs Real Analysis'
+            }
+        }
+    }
+});
+
+// Yearly chart
+new Chart(document.getElementById('yearlyChart'), {
+    type: 'line',
+    data: {
+        labels: yearlyData.map(d => d.label),
+        datasets: [
+            {
+                label: 'Fake',
+                data: yearlyData.map(d => d.fake),
+                borderColor: 'rgba(255, 99, 132, 1)',
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                fill: true,
+                tension: 0.1
+            },
+            {
+                label: 'Real',
+                data: yearlyData.map(d => d.real),
+                borderColor: 'rgba(75, 192, 192, 1)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                fill: true,
+                tension: 0.1
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            title: {
+                display: true,
+                text: 'Yearly Fake vs Real Trend'
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

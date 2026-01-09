@@ -1,0 +1,311 @@
+{% extends "base.html" %}
+
+{% block title %}System Analytics - Admin{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h2><i class="fas fa-chart-pie"></i> System Analytics</h2>
+            <p class="text-muted">Comprehensive system performance and usage analytics</p>
+        </div>
+    </div>
+    
+    <!-- Monthly Trend -->
+    {% if monthly_stats %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-area"></i> Monthly System Trends</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="monthlyChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Distribution Charts -->
+    <div class="row mb-4">
+        {% if file_type_stats %}
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-pie"></i> File Type Distribution</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="fileTypeChart"></canvas>
+                    <div class="mt-3">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Count</th>
+                                    <th>Avg Confidence</th>
+                                    <th>Fake Rate</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for stat in file_type_stats %}
+                                <tr>
+                                    <td>{{ stat.file_type.title() }}</td>
+                                    <td>{{ stat.count }}</td>
+                                    <td>{{ "%.1f"|format(stat.avg_confidence * 100) }}%</td>
+                                    <td>{{ "%.1f"|format((stat.fake_count / stat.count * 100) if stat.count > 0 else 0) }}%</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if user_activity %}
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-doughnut"></i> User Activity Levels</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="userActivityChart"></canvas>
+                    <div class="mt-3">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Activity Level</th>
+                                    <th>Users</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for activity in user_activity %}
+                                <tr>
+                                    <td>{{ activity.activity_level }}</td>
+                                    <td>{{ activity.user_count }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Accuracy Trends -->
+    {% if accuracy_trends %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-line"></i> Detection Accuracy Trends (Last 30 Days)</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="accuracyChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Summary Statistics -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-info-circle"></i> System Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        {% if monthly_stats %}
+                        {% set total_analyses = monthly_stats | sum(attribute='total_analyses') %}
+                        {% set total_users = monthly_stats | sum(attribute='unique_users') %}
+                        {% set total_fake = monthly_stats | sum(attribute='fake_count') %}
+                        {% set avg_confidence = (monthly_stats | sum(attribute='avg_confidence')) / monthly_stats | length %}
+                        
+                        <div class="col-md-3">
+                            <h4 class="text-primary">{{ total_analyses }}</h4>
+                            <small class="text-muted">Total Analyses (12 months)</small>
+                        </div>
+                        <div class="col-md-3">
+                            <h4 class="text-success">{{ total_users }}</h4>
+                            <small class="text-muted">Active Users</small>
+                        </div>
+                        <div class="col-md-3">
+                            <h4 class="text-danger">{{ "%.1f"|format((total_fake / total_analyses * 100) if total_analyses > 0 else 0) }}%</h4>
+                            <small class="text-muted">Fake Detection Rate</small>
+                        </div>
+                        <div class="col-md-3">
+                            <h4 class="text-info">{{ "%.1f"|format(avg_confidence * 100) }}%</h4>
+                            <small class="text-muted">Average Confidence</small>
+                        </div>
+                        {% else %}
+                        <div class="col-12">
+                            <p class="text-muted">No data available for the last 12 months.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+{% if monthly_stats %}
+// Monthly trends chart
+const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
+const monthlyData = {{ monthly_stats | tojsonfilter }};
+
+new Chart(monthlyCtx, {
+    type: 'line',
+    data: {
+        labels: monthlyData.map(d => d.month),
+        datasets: [{
+            label: 'Total Analyses',
+            data: monthlyData.map(d => d.total_analyses),
+            borderColor: 'rgb(54, 162, 235)',
+            backgroundColor: 'rgba(54, 162, 235, 0.1)',
+            tension: 0.1
+        }, {
+            label: 'Unique Users',
+            data: monthlyData.map(d => d.unique_users),
+            borderColor: 'rgb(75, 192, 192)',
+            backgroundColor: 'rgba(75, 192, 192, 0.1)',
+            tension: 0.1
+        }, {
+            label: 'Fake Detected',
+            data: monthlyData.map(d => d.fake_count),
+            borderColor: 'rgb(255, 99, 132)',
+            backgroundColor: 'rgba(255, 99, 132, 0.1)',
+            tension: 0.1
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true,
+                title: {
+                    display: true,
+                    text: 'Count'
+                }
+            }
+        }
+    }
+});
+{% endif %}
+
+{% if file_type_stats %}
+// File type distribution
+const fileTypeCtx = document.getElementById('fileTypeChart').getContext('2d');
+const fileTypeData = {{ file_type_stats | tojsonfilter }};
+
+new Chart(fileTypeCtx, {
+    type: 'pie',
+    data: {
+        labels: fileTypeData.map(d => d.file_type.charAt(0).toUpperCase() + d.file_type.slice(1) + 's'),
+        datasets: [{
+            data: fileTypeData.map(d => d.count),
+            backgroundColor: [
+                'rgba(255, 99, 132, 0.8)',
+                'rgba(54, 162, 235, 0.8)',
+                'rgba(255, 205, 86, 0.8)',
+                'rgba(75, 192, 192, 0.8)'
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+{% endif %}
+
+{% if user_activity %}
+// User activity distribution
+const userActivityCtx = document.getElementById('userActivityChart').getContext('2d');
+const userActivityData = {{ user_activity | tojsonfilter }};
+
+new Chart(userActivityCtx, {
+    type: 'doughnut',
+    data: {
+        labels: userActivityData.map(d => d.activity_level),
+        datasets: [{
+            data: userActivityData.map(d => d.user_count),
+            backgroundColor: [
+                'rgba(220, 53, 69, 0.8)',
+                'rgba(255, 193, 7, 0.8)',
+                'rgba(40, 167, 69, 0.8)',
+                'rgba(23, 162, 184, 0.8)',
+                'rgba(108, 117, 125, 0.8)'
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+{% endif %}
+
+{% if accuracy_trends %}
+// Accuracy trends chart
+const accuracyCtx = document.getElementById('accuracyChart').getContext('2d');
+const accuracyData = {{ accuracy_trends | tojsonfilter }};
+
+new Chart(accuracyCtx, {
+    type: 'line',
+    data: {
+        labels: accuracyData.map(d => d.date),
+        datasets: [{
+            label: 'Confidence',
+            data: accuracyData.map(d => d.avg_confidence),
+            borderColor: 'rgb(54, 162, 235)',
+            backgroundColor: 'rgba(54, 162, 235, 0.1)',
+            tension: 0.1
+        }, {
+            label: 'Accuracy',
+            data: accuracyData.map(d => d.avg_accuracy),
+            borderColor: 'rgb(75, 192, 192)',
+            backgroundColor: 'rgba(75, 192, 192, 0.1)',
+            tension: 0.1
+        }, {
+            label: 'Trust Score',
+            data: accuracyData.map(d => d.avg_trust_score),
+            borderColor: 'rgb(255, 205, 86)',
+            backgroundColor: 'rgba(255, 205, 86, 0.1)',
+            tension: 0.1
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 1,
+                title: {
+                    display: true,
+                    text: 'Score (0-1)'
+                }
+            }
+        }
+    }
+});
+{% endif %}
+</script>
+{% endblock %}

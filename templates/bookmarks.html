@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Bookmarks - Deepfake Analyzer{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h2><i class="fas fa-bookmark"></i> Bookmarked Analyses</h2>
+            <p class="text-muted">{{ analyses|length }} bookmarked analyses</p>
+        </div>
+    </div>
+    
+    <div class="row mb-3">
+        <div class="col-12">
+            <a href="{{ url_for('history') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to History
+            </a>
+        </div>
+    </div>
+    
+    {% if analyses %}
+    <div class="row">
+        {% for analysis in analyses %}
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">{{ analysis.filename }}</h6>
+                    <div>
+                        <span class="badge bg-{{ 'danger' if analysis.result == 'Fake' else 'success' }} me-2">
+                            {{ analysis.result }}
+                        </span>
+                        <small class="text-muted">Bookmarked: {{ analysis.bookmarked_at }}</small>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6">
+                            <small class="text-muted">Confidence</small>
+                            <div class="confidence-meter mb-2">
+                                <div class="confidence-fill confidence-{{ 'high' if analysis.confidence > 0.7 else 'medium' if analysis.confidence > 0.4 else 'low' }}" 
+                                     style="width: {{ analysis.confidence * 100 }}%"></div>
+                            </div>
+                            <strong>{{ "%.1f"|format(analysis.confidence * 100) }}%</strong>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">Trust Score</small>
+                            <div class="confidence-meter mb-2">
+                                <div class="confidence-fill confidence-{{ 'high' if analysis.trust_score > 0.7 else 'medium' if analysis.trust_score > 0.4 else 'low' }}" 
+                                     style="width: {{ analysis.trust_score * 100 }}%"></div>
+                            </div>
+                            <strong>{{ "%.1f"|format(analysis.trust_score * 100) }}%</strong>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3 d-flex justify-content-between">
+                        <div>
+                            <span class="badge bg-secondary me-2">{{ analysis.file_type.upper() }}</span>
+                            <small class="text-muted">{{ analysis.created_at }}</small>
+                        </div>
+                        <div>
+                            <a href="{{ url_for('view_analysis', analysis_id=analysis.id) }}" class="btn btn-sm btn-primary">
+                                <i class="fas fa-eye"></i> View Details
+                            </a>
+                            <button class="btn btn-sm btn-warning bookmark-btn" data-id="{{ analysis.id }}">
+                                <i class="fas fa-bookmark"></i> Remove
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-bookmark fa-3x text-muted mb-3"></i>
+                    <h5>No bookmarks yet</h5>
+                    <p class="text-muted">Bookmark analyses from your history to access them quickly later.</p>
+                    <a href="{{ url_for('history') }}" class="btn btn-primary">
+                        <i class="fas fa-history"></i> View History
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Bookmark removal functionality
+document.querySelectorAll('.bookmark-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const analysisId = this.dataset.id;
+        
+        if (confirm('Remove this bookmark?')) {
+            fetch(`/bookmark/${analysisId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Remove the card from view
+                    this.closest('.col-lg-6').remove();
+                    
+                    // Update count
+                    const countElement = document.querySelector('.text-muted');
+                    const currentCount = parseInt(countElement.textContent.split(' ')[0]);
+                    countElement.textContent = `${currentCount - 1} bookmarked analyses`;
+                    
+                    // Show empty state if no bookmarks left
+                    if (currentCount - 1 === 0) {
+                        location.reload();
+                    }
+                }
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

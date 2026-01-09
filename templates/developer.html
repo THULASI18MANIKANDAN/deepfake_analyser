@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Developer Dashboard - Deepfake Analyzer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .api-key-display {
+            font-family: 'Courier New', monospace;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+            word-break: break-all;
+        }
+        .code-block {
+            background: #2d3748;
+            color: #124382;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    {% extends "base.html" %}
+    
+    {% block content %}
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1><i class="fas fa-code me-2"></i>Developer Dashboard</h1>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#generateKeyModal">
+                        <i class="fas fa-plus me-2"></i>Generate API Key
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- API Statistics -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4>{{ api_stats.total_requests or 0 }}</h4>
+                                <p class="mb-0">Total API Requests</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-chart-line fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4>{{ api_stats.requests_this_week or 0 }}</h4>
+                                <p class="mb-0">This Week</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-calendar-week fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4>{{ api_stats.requests_today or 0 }}</h4>
+                                <p class="mb-0">Today</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-calendar-day fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4>{{ api_keys|length }}</h4>
+                                <p class="mb-0">Active API Keys</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-key fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- API Keys Management -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-key me-2"></i>API Keys</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if api_keys %}
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>API Key</th>
+                                            <th>Status</th>
+                                            <th>Created</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for key in api_keys %}
+                                        <tr>
+                                            <td>{{ key.key_name }}</td>
+                                            <td>
+                                                <div class="api-key-display">
+                                                    <span class="key-hidden">df_••••••••••••••••••••••••••••••••••••••••••••</span>
+                                                    <span class="key-visible d-none">{{ key.api_key }}</span>
+                                                    <button class="btn btn-sm btn-outline-secondary ms-2 toggle-key" data-key-id="{{ key.id }}">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-outline-primary ms-1 copy-key" data-key="{{ key.api_key }}">
+                                                        <i class="fas fa-copy"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                {% if key.is_active %}
+                                                    <span class="badge bg-success">Active</span>
+                                                {% else %}
+                                                    <span class="badge bg-danger">Revoked</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ key.created_at }}</td>
+                                            <td>
+                                                {% if key.is_active %}
+                                                    <button class="btn btn-sm btn-danger revoke-key" data-key-id="{{ key.id }}">
+                                                        <i class="fas fa-ban me-1"></i>Revoke
+                                                    </button>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-4">
+                                <i class="fas fa-key fa-3x text-muted mb-3"></i>
+                                <h5>No API Keys</h5>
+                                <p class="text-muted">Generate your first API key to start using the API</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- API Documentation -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-book me-2"></i>API Documentation</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Base URL</h6>
+                                <div class="code-block mb-3">{{ request.url_root }}api/v1/</div>
+
+                                <h6>Authentication</h6>
+                                <p>Include your API key in the request header:</p>
+                                <div class="code-block mb-3">X-API-Key: your_api_key_here</div>
+
+                                <h6>Analyze Single File</h6>
+                                <div class="code-block mb-3">POST /api/v1/analyze
+Content-Type: multipart/form-data
+
+curl -X POST \
+  -H "X-API-Key: your_api_key" \
+  -F "file=@image.jpg" \
+  {{ request.url_root }}api/v1/analyze</div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Get Analysis Results</h6>
+                                <div class="code-block mb-3">GET /api/v1/analysis/{id}
+
+curl -H "X-API-Key: your_api_key" \
+  {{ request.url_root }}api/v1/analysis/123</div>
+
+                                <h6>List Analyses</h6>
+                                <div class="code-block mb-3">GET /api/v1/analyses?page=1&per_page=20
+
+curl -H "X-API-Key: your_api_key" \
+  {{ request.url_root }}api/v1/analyses</div>
+
+                                <h6>Batch Analysis</h6>
+                                <div class="code-block mb-3">POST /api/v1/batch_analyze
+
+curl -X POST \
+  -H "X-API-Key: your_api_key" \
+  -F "files=@image1.jpg" \
+  -F "files=@image2.jpg" \
+  {{ request.url_root }}api/v1/batch_analyze</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent API Requests -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-history me-2"></i>Recent API Requests</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if recent_requests %}
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Endpoint</th>
+                                            <th>Method</th>
+                                            <th>Status</th>
+                                            <th>Response Time</th>
+                                            <th>Timestamp</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for request in recent_requests %}
+                                        <tr>
+                                            <td><code>{{ request.endpoint }}</code></td>
+                                            <td><span class="badge bg-primary">{{ request.method }}</span></td>
+                                            <td>
+                                                {% if request.status_code == 200 %}
+                                                    <span class="badge bg-success">{{ request.status_code }}</span>
+                                                {% elif request.status_code >= 400 %}
+                                                    <span class="badge bg-danger">{{ request.status_code }}</span>
+                                                {% else %}
+                                                    <span class="badge bg-warning">{{ request.status_code }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if request.response_time %}
+                                                    {{ "%.2f"|format(request.response_time) }}s
+                                                {% else %}
+                                                    -
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ request.created_at }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-4">
+                                <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                                <h5>No API Requests</h5>
+                                <p class="text-muted">Your API requests will appear here</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Generate API Key Modal -->
+    <div class="modal fade" id="generateKeyModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Generate New API Key</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="generateKeyForm">
+                        <div class="mb-3">
+                            <label for="keyName" class="form-label">Key Name</label>
+                            <input type="text" class="form-control" id="keyName" name="name" placeholder="e.g., Production Key" required>
+                            <div class="form-text">Give your API key a descriptive name</div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="generateKeyBtn">Generate Key</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Generate API Key
+        document.getElementById('generateKeyBtn').addEventListener('click', function() {
+            const keyName = document.getElementById('keyName').value;
+            
+            fetch('/api/generate_key', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ name: keyName })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('API Key generated successfully!\n\nKey: ' + data.api_key + '\n\nPlease save this key securely. You won\'t be able to see it again.');
+                    location.reload();
+                } else {
+                    alert('Error generating API key');
+                }
+            });
+        });
+
+        // Revoke API Key
+        document.querySelectorAll('.revoke-key').forEach(button => {
+            button.addEventListener('click', function() {
+                const keyId = this.dataset.keyId;
+                
+                if (confirm('Are you sure you want to revoke this API key? This action cannot be undone.')) {
+                    fetch(`/api/revoke_key/${keyId}`, {
+                        method: 'POST'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            location.reload();
+                        } else {
+                            alert('Error revoking API key');
+                        }
+                    });
+                }
+            });
+        });
+
+        // Toggle API Key visibility
+        document.querySelectorAll('.toggle-key').forEach(button => {
+            button.addEventListener('click', function() {
+                const row = this.closest('tr');
+                const hidden = row.querySelector('.key-hidden');
+                const visible = row.querySelector('.key-visible');
+                const icon = this.querySelector('i');
+                
+                if (hidden.classList.contains('d-none')) {
+                    hidden.classList.remove('d-none');
+                    visible.classList.add('d-none');
+                    icon.className = 'fas fa-eye';
+                } else {
+                    hidden.classList.add('d-none');
+                    visible.classList.remove('d-none');
+                    icon.className = 'fas fa-eye-slash';
+                }
+            });
+        });
+
+        // Copy API Key
+        document.querySelectorAll('.copy-key').forEach(button => {
+            button.addEventListener('click', function() {
+                const key = this.dataset.key;
+                navigator.clipboard.writeText(key).then(() => {
+                    const icon = this.querySelector('i');
+                    icon.className = 'fas fa-check';
+                    setTimeout(() => {
+                        icon.className = 'fas fa-copy';
+                    }, 2000);
+                });
+            });
+        });
+    </script>
+    {% endblock %}
+</body>
+</html>
