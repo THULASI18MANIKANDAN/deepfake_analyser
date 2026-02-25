@@ -10,7 +10,7 @@
             <p class="text-muted">System overview and management</p>
         </div>
     </div>
-    
+
     <!-- System Statistics -->
     <div class="row mb-4">
         <div class="col-md-3">
@@ -28,7 +28,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="col-md-3">
             <div class="card bg-success text-white">
                 <div class="card-body">
@@ -44,7 +44,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="col-md-3">
             <div class="card bg-warning text-white">
                 <div class="card-body">
@@ -60,13 +60,14 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="col-md-3">
             <div class="card bg-info text-white">
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <h4>{{ "%.1f"|format((system_stats.total_fake / system_stats.total_analyses * 100) if system_stats.total_analyses > 0 else 0) }}%</h4>
+                            <h4>{{ "%.1f"|format((system_stats.total_fake / system_stats.total_analyses * 100) if
+                                system_stats.total_analyses > 0 else 0) }}%</h4>
                             <p class="mb-0">Fake Detection Rate</p>
                         </div>
                         <div>
@@ -77,7 +78,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Quick Actions -->
     <div class="row mb-4">
         <div class="col-12">
@@ -112,7 +113,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Charts Row -->
     <div class="row mb-4">
         {% if daily_trend %}
@@ -122,12 +123,12 @@
                     <h5><i class="fas fa-chart-area"></i> Daily Analysis Trend (Last 30 Days)</h5>
                 </div>
                 <div class="card-body">
-                    <canvas id="dailyTrendChart" height="100"></canvas>
+                    <canvas id="dailyTrendChart" height="100" data-chart='{{ daily_trend | tojson }}'></canvas>
                 </div>
             </div>
         </div>
         {% endif %}
-        
+
         <div class="col-lg-4">
             <div class="card">
                 <div class="card-header">
@@ -154,7 +155,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Recent Users -->
     <div class="row">
         <div class="col-12">
@@ -200,54 +201,57 @@
 
 {% block scripts %}
 <script>
-{% if daily_trend %}
-// Daily trend chart
-const dailyCtx = document.getElementById('dailyTrendChart').getContext('2d');
-const dailyData = {{ daily_trend | tojsonfilter }};
+    document.addEventListener('DOMContentLoaded', function () {
+        // Daily trend chart
+        const dailyCanvas = document.getElementById('dailyTrendChart');
+        if (dailyCanvas) {
+            const dailyCtx = dailyCanvas.getContext('2d');
+            const dailyData = JSON.parse(dailyCanvas.dataset.chart);
 
-new Chart(dailyCtx, {
-    type: 'line',
-    data: {
-        labels: dailyData.map(d => d.date),
-        datasets: [{
-            label: 'Total Analyses',
-            data: dailyData.map(d => d.total),
-            borderColor: 'rgb(54, 162, 235)',
-            backgroundColor: 'rgba(54, 162, 235, 0.1)',
-            tension: 0.1
-        }, {
-            label: 'Fake Detected',
-            data: dailyData.map(d => d.fake_count),
-            borderColor: 'rgb(255, 99, 132)',
-            backgroundColor: 'rgba(255, 99, 132, 0.1)',
-            tension: 0.1
-        }, {
-            label: 'Unique Users',
-            data: dailyData.map(d => d.unique_users),
-            borderColor: 'rgb(75, 192, 192)',
-            backgroundColor: 'rgba(75, 192, 192, 0.1)',
-            tension: 0.1
-        }]
-    },
-    options: {
-        responsive: true,
-        scales: {
-            y: {
-                beginAtZero: true,
-                title: {
-                    display: true,
-                    text: 'Count'
+            new Chart(dailyCtx, {
+                type: 'line',
+                data: {
+                    labels: dailyData.map(d => d.date),
+                    datasets: [{
+                        label: 'Total Analyses',
+                        data: dailyData.map(d => d.total),
+                        borderColor: 'rgb(54, 162, 235)',
+                        backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                        tension: 0.1
+                    }, {
+                        label: 'Fake Detected',
+                        data: dailyData.map(d => d.fake_count),
+                        borderColor: 'rgb(255, 99, 132)',
+                        backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                        tension: 0.1
+                    }, {
+                        label: 'Unique Users',
+                        data: dailyData.map(d => d.unique_users),
+                        borderColor: 'rgb(75, 192, 192)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Count'
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'System Activity Overview'
+                        }
+                    }
                 }
-            }
-        },
-        plugins: {
-            title: {
-                display: true,
-                text: 'System Activity Overview'
-            }
+            });
         }
-    }
-});
-{% endif %}
+    });
 </script>
 {% endblock %}

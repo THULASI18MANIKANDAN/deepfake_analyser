@@ -6,16 +6,29 @@ from email import encoders
 import os
 from datetime import datetime
 import json
+from dotenv import load_dotenv
+import traceback
+
+# Load environment variables from .env file
+load_dotenv()
 
 class EmailService:
     """Email service for sending notifications and reports"""
     
     def __init__(self):
-        # Email configuration (in production, use environment variables)
-        self.smtp_server = "smtp.gmail.com"
-        self.smtp_port = 587
-        self.email_address = "thulasitmk181@gmail.com"
-        self.email_password = "tbex lpqr rorf zvxc"  # Use app password for Gmail
+        # Email configuration (prefer environment variables)
+        self.smtp_server = os.environ.get("SMTP_SERVER", "smtp.gmail.com")
+        self.smtp_port = int(os.environ.get("SMTP_PORT", 587))
+        self.email_address = os.environ.get("EMAIL_ADDRESS", "thulasitmk181@gmail.com")
+        self.email_password = os.environ.get("EMAIL_PASSWORD", "swwh sykm jpwp ggwh")
+        
+        # Track last error
+        self.last_error = None
+        
+        # Verify configuration
+        if self.email_password == "your_new_app_password_here":
+            print("WARNING: EmailService initialized with placeholder password. Email sending will fail.")
+            self.last_error = "Placeholder password in use"
         
     def send_analysis_complete_notification(self, user_email, analysis_data):
         """Send notification when analysis is complete"""
@@ -73,7 +86,8 @@ class EmailService:
             return self._send_email(user_email, subject, html_content)
             
         except Exception as e:
-            print(f"Error sending analysis notification: {e}")
+            self.last_error = f"Error sending analysis notification: {str(e)}"
+            print(self.last_error)
             return False
     
     def send_weekly_report(self, user_email, report_data):
@@ -140,7 +154,8 @@ class EmailService:
             return self._send_email(user_email, subject, html_content)
             
         except Exception as e:
-            print(f"Error sending weekly report: {e}")
+            self.last_error = f"Error sending weekly report: {str(e)}"
+            print(self.last_error)
             return False
     
     def send_admin_alert(self, alert_type, alert_data):
@@ -206,11 +221,13 @@ class EmailService:
             return self._send_email(admin_email, subject, html_content)
             
         except Exception as e:
-            print(f"Error sending admin alert: {e}")
+            self.last_error = f"Error sending admin alert: {str(e)}"
+            print(self.last_error)
             return False
     
     def _send_email(self, to_email, subject, html_content):
         """Send email using SMTP"""
+        server = None
         try:
             # Create message
             msg = MIMEMultipart('alternative')
@@ -223,22 +240,43 @@ class EmailService:
             msg.attach(html_part)
             
             # Connect to server and send email
-            server = smtplib.SMTP(self.smtp_server, self.smtp_port)
+            server = smtplib.SMTP(self.smtp_server, self.smtp_port, timeout=10)
+            server.set_debuglevel(1) # Enable debug output for terminal logs
             server.starttls()
             server.login(self.email_address, self.email_password)
             
             text = msg.as_string()
             server.sendmail(self.email_address, to_email, text)
-            server.quit()
-            
             return True
             
-        except Exception as e:
-            print(f"Error sending email: {e}")
+        except smtplib.SMTPAuthenticationError:
+            self.last_error = "Authentication failed. Please check your EMAIL_ADDRESS and EMAIL_PASSWORD (App Password)."
+            print(f"SMTP Error: {self.last_error}")
             return False
+        except smtplib.SMTPConnectError:
+            self.last_error = f"Connection failed. Could not connect to {self.smtp_server} on port {self.smtp_port}."
+            print(f"SMTP Error: {self.last_error}")
+            return False
+        except smtplib.SMTPException as e:
+            self.last_error = f"SMTP error occurred: {str(e)}"
+            print(f"SMTP Error: {self.last_error}")
+            traceback.print_exc()
+            return False
+        except Exception as e:
+            self.last_error = f"Unexpected error sending email: {str(e)}"
+            print(f"Error: {self.last_error}")
+            traceback.print_exc()
+            return False
+        finally:
+            if server:
+                try:
+                    server.quit()
+                except:
+                    pass
     
     def send_report_with_attachment(self, to_email, subject, content, attachment_path):
         """Send email with PDF attachment"""
+        server = None
         try:
             msg = MIMEMultipart()
             msg['From'] = self.email_address
@@ -262,14 +300,25 @@ class EmailService:
                 msg.attach(part)
             
             # Send email
-            server = smtplib.SMTP(self.smtp_server, self.smtp_port)
+            server = smtplib.SMTP(self.smtp_server, self.smtp_port, timeout=10)
+            server.set_debuglevel(1)
             server.starttls()
             server.login(self.email_address, self.email_password)
             server.send_message(msg)
-            server.quit()
-            
             return True
             
-        except Exception as e:
-            print(f"Error sending email with attachment: {e}")
+        except smtplib.SMTPAuthenticationError:
+            self.last_error = "Authentication failed during attachment send. Check App Password."
+            print(f"SMTP Error: {self.last_error}")
             return False
+        except Exception as e:
+            self.last_error = f"SMTP Error with attachment: {str(e)}"
+            print(self.last_error)
+            traceback.print_exc()
+            return False
+        finally:
+            if server:
+                try:
+                    server.quit()
+                except:
+                    pass

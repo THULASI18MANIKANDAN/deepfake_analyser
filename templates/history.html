@@ -10,7 +10,7 @@
             <p class="text-muted">{{ total }} total analyses found</p>
         </div>
     </div>
-    
+
     <!-- Filters -->
     <div class="row mb-4">
         <div class="col-12">
@@ -23,23 +23,23 @@
                         <div class="row">
                             <div class="col-md-3">
                                 <label class="form-label">Search</label>
-                                <input type="text" class="form-control" name="search" 
-                                       value="{{ search_query }}" placeholder="Search filenames...">
+                                <input type="text" class="form-control" name="search" value="{{ search_query }}"
+                                    placeholder="Search filenames...">
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">Result</label>
                                 <select class="form-select" name="result">
                                     <option value="">All Results</option>
-                                    <option value="Real" {{ 'selected' if result_filter == 'Real' }}>Real</option>
-                                    <option value="Fake" {{ 'selected' if result_filter == 'Fake' }}>Fake</option>
+                                    <option value="Real" {{ 'selected' if result_filter=='Real' }}>Real</option>
+                                    <option value="Fake" {{ 'selected' if result_filter=='Fake' }}>Fake</option>
                                 </select>
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">File Type</label>
                                 <select class="form-select" name="file_type">
                                     <option value="">All Types</option>
-                                    <option value="image" {{ 'selected' if file_type_filter == 'image' }}>Images</option>
-                                    <option value="video" {{ 'selected' if file_type_filter == 'video' }}>Videos</option>
+                                    <option value="image" {{ 'selected' if file_type_filter=='image' }}>Images</option>
+                                    <option value="video" {{ 'selected' if file_type_filter=='video' }}>Videos</option>
                                 </select>
                             </div>
                             <div class="col-md-2">
@@ -57,22 +57,23 @@
                                 </button>
                             </div>
                         </div>
-                        
+
                         <div class="row mt-3">
                             <div class="col-md-3">
                                 <label class="form-label">Sort By</label>
                                 <select class="form-select" name="sort">
-                                    <option value="created_at" {{ 'selected' if sort_by == 'created_at' }}>Date</option>
-                                    <option value="filename" {{ 'selected' if sort_by == 'filename' }}>Filename</option>
-                                    <option value="confidence" {{ 'selected' if sort_by == 'confidence' }}>Confidence</option>
-                                    <option value="result" {{ 'selected' if sort_by == 'result' }}>Result</option>
+                                    <option value="created_at" {{ 'selected' if sort_by=='created_at' }}>Date</option>
+                                    <option value="filename" {{ 'selected' if sort_by=='filename' }}>Filename</option>
+                                    <option value="confidence" {{ 'selected' if sort_by=='confidence' }}>Confidence
+                                    </option>
+                                    <option value="result" {{ 'selected' if sort_by=='result' }}>Result</option>
                                 </select>
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">Order</label>
                                 <select class="form-select" name="order">
-                                    <option value="desc" {{ 'selected' if sort_order == 'desc' }}>Descending</option>
-                                    <option value="asc" {{ 'selected' if sort_order == 'asc' }}>Ascending</option>
+                                    <option value="desc" {{ 'selected' if sort_order=='desc' }}>Descending</option>
+                                    <option value="asc" {{ 'selected' if sort_order=='asc' }}>Ascending</option>
                                 </select>
                             </div>
                             <div class="col-md-2">
@@ -87,7 +88,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Bulk Actions -->
     {% if analyses %}
     <div class="row mb-3">
@@ -109,7 +110,7 @@
         </div>
     </div>
     {% endif %}
-    
+
     <!-- Results -->
     <div class="row">
         <div class="col-12">
@@ -136,12 +137,13 @@
                                 {% for analysis in analyses %}
                                 <tr>
                                     <td>
-                                        <input type="checkbox" class="form-check-input analysis-checkbox" 
-                                               value="{{ analysis.id }}">
+                                        <input type="checkbox" class="form-check-input analysis-checkbox"
+                                            value="{{ analysis.id }}">
                                     </td>
                                     <td>
                                         <div class="d-flex align-items-center">
-                                            <i class="fas fa-{{ 'image' if analysis.file_type == 'image' else 'video' }} me-2 text-muted"></i>
+                                            <i
+                                                class="fas fa-{{ 'image' if analysis.file_type == 'image' else 'video' }} me-2 text-muted"></i>
                                             <span>{{ analysis.filename }}</span>
                                         </div>
                                     </td>
@@ -149,14 +151,15 @@
                                         <span class="badge bg-secondary">{{ analysis.file_type.upper() }}</span>
                                     </td>
                                     <td>
-                                        <span class="badge bg-{{ 'danger' if analysis.result == 'Fake' else 'success' }}">
+                                        <span
+                                            class="badge bg-{{ 'danger' if analysis.result == 'Fake' else 'success' }}">
                                             {{ analysis.result }}
                                         </span>
                                     </td>
                                     <td>
                                         <div class="confidence-meter mb-1" style="width: 80px;">
-                                            <div class="confidence-fill confidence-{{ 'high' if analysis.confidence > 0.7 else 'medium' if analysis.confidence > 0.4 else 'low' }}" 
-                                                 style="width: {{ analysis.confidence * 100 }}%"></div>
+                                            <div class="confidence-fill confidence-{{ analysis.confidence_level }}"
+                                                data-width="{{ analysis.confidence_percent }}"></div>
                                         </div>
                                         <small>{{ "%.1f"|format(analysis.confidence * 100) }}%</small>
                                     </td>
@@ -166,12 +169,12 @@
                                     </td>
                                     <td>
                                         <div class="btn-group" role="group">
-                                            <a href="{{ url_for('view_analysis', analysis_id=analysis.id) }}" 
-                                               class="btn btn-sm btn-outline-primary" title="View Details">
+                                            <a href="{{ url_for('view_analysis', analysis_id=analysis.id) }}"
+                                                class="btn btn-sm btn-outline-primary" title="View Details">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            <button class="btn btn-sm btn-outline-warning bookmark-btn" 
-                                                    data-id="{{ analysis.id }}" title="Bookmark">
+                                            <button class="btn btn-sm btn-outline-warning bookmark-btn"
+                                                data-id="{{ analysis.id }}" title="Bookmark">
                                                 <i class="fas fa-bookmark"></i>
                                             </button>
                                         </div>
@@ -183,7 +186,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Pagination -->
             {% if total_pages > 1 %}
             <nav class="mt-4">
@@ -193,32 +196,32 @@
                         <a class="page-link" href="{{ url_for('history', page=page-1, **request.args) }}">Previous</a>
                     </li>
                     {% endif %}
-                    
+
                     {% for p in range(1, total_pages + 1) %}
-                        {% if p == page %}
-                        <li class="page-item active">
-                            <span class="page-link">{{ p }}</span>
-                        </li>
-                        {% elif p <= 3 or p >= total_pages - 2 or (p >= page - 2 and p <= page + 2) %}
-                        <li class="page-item">
-                            <a class="page-link" href="{{ url_for('history', page=p, **request.args) }}">{{ p }}</a>
-                        </li>
-                        {% elif p == 4 or p == total_pages - 3 %}
-                        <li class="page-item disabled">
-                            <span class="page-link">...</span>
-                        </li>
-                        {% endif %}
-                    {% endfor %}
-                    
-                    {% if has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="{{ url_for('history', page=page+1, **request.args) }}">Next</a>
+                    {% if p == page %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ p }}</span>
                     </li>
-                    {% endif %}
+                    {% elif p <= 3 or p>= total_pages - 2 or (p >= page - 2 and p <= page + 2) %} <li class="page-item">
+                            <a class="page-link" href="{{ url_for('history', page=p, **request.args) }}">{{ p }}</a>
+                            </li>
+                            {% elif p == 4 or p == total_pages - 3 %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                            {% endif %}
+                            {% endfor %}
+
+                            {% if has_next %}
+                            <li class="page-item">
+                                <a class="page-link"
+                                    href="{{ url_for('history', page=page+1, **request.args) }}">Next</a>
+                            </li>
+                            {% endif %}
                 </ul>
             </nav>
             {% endif %}
-            
+
             {% else %}
             <div class="card">
                 <div class="card-body text-center py-5">
@@ -238,124 +241,136 @@
 
 {% block scripts %}
 <script>
-// Select all functionality
-document.getElementById('selectAll').addEventListener('change', function() {
-    const checkboxes = document.querySelectorAll('.analysis-checkbox');
-    checkboxes.forEach(cb => cb.checked = this.checked);
-    toggleBulkActions();
-});
+    // Select all functionality
+    document.getElementById('selectAll').addEventListener('change', function () {
+        const checkboxes = document.querySelectorAll('.analysis-checkbox');
+        checkboxes.forEach(cb => cb.checked = this.checked);
+        toggleBulkActions();
+    });
 
-document.getElementById('selectAllHeader').addEventListener('change', function() {
-    document.getElementById('selectAll').checked = this.checked;
-    document.getElementById('selectAll').dispatchEvent(new Event('change'));
-});
+    document.getElementById('selectAllHeader').addEventListener('change', function () {
+        document.getElementById('selectAll').checked = this.checked;
+        document.getElementById('selectAll').dispatchEvent(new Event('change'));
+    });
 
-// Individual checkbox handling
-document.querySelectorAll('.analysis-checkbox').forEach(cb => {
-    cb.addEventListener('change', toggleBulkActions);
-});
+    // Individual checkbox handling
+    document.querySelectorAll('.analysis-checkbox').forEach(cb => {
+        cb.addEventListener('change', toggleBulkActions);
+    });
 
-function toggleBulkActions() {
-    const selected = document.querySelectorAll('.analysis-checkbox:checked');
-    const bulkActions = document.getElementById('bulkActions');
-    
-    if (selected.length > 0) {
-        bulkActions.style.display = 'block';
-    } else {
-        bulkActions.style.display = 'none';
+    function toggleBulkActions() {
+        const selected = document.querySelectorAll('.analysis-checkbox:checked');
+        const bulkActions = document.getElementById('bulkActions');
+
+        if (selected.length > 0) {
+            bulkActions.style.display = 'block';
+        } else {
+            bulkActions.style.display = 'none';
+        }
     }
-}
 
-function getSelectedIds() {
-    return Array.from(document.querySelectorAll('.analysis-checkbox:checked'))
-                .map(cb => parseInt(cb.value));
-}
-
-function bulkBookmark() {
-    const ids = getSelectedIds();
-    if (ids.length === 0) return;
-    
-    if (confirm(`Bookmark ${ids.length} selected analyses?`)) {
-        fetch('/bulk_action', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'bookmark', analysis_ids: ids })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showToast(data.message, 'success');
-            } else {
-                showToast(data.message, 'error');
-            }
-        });
+    function getSelectedIds() {
+        return Array.from(document.querySelectorAll('.analysis-checkbox:checked'))
+            .map(cb => parseInt(cb.value));
     }
-}
 
-function bulkDelete() {
-    const ids = getSelectedIds();
-    if (ids.length === 0) return;
-    
-    if (confirm(`Delete ${ids.length} selected analyses? This action cannot be undone.`)) {
-        fetch('/bulk_action', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'delete', analysis_ids: ids })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showToast(data.message, 'success');
-                setTimeout(() => location.reload(), 1000);
-            } else {
-                showToast(data.message, 'error');
-            }
-        });
+    function bulkBookmark() {
+        const ids = getSelectedIds();
+        if (ids.length === 0) return;
+
+        if (confirm(`Bookmark ${ids.length} selected analyses?`)) {
+            fetch('/bulk_action', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'bookmark', analysis_ids: ids })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast(data.message, 'success');
+                    } else {
+                        showToast(data.message, 'error');
+                    }
+                });
+        }
     }
-}
 
-function showToast(message, type) {
-    const toast = document.createElement('div');
-    toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} toast-notification`;
-    toast.textContent = message;
-    document.body.appendChild(toast);
-    
-    setTimeout(() => toast.remove(), 3000);
-}
+    function bulkDelete() {
+        const ids = getSelectedIds();
+        if (ids.length === 0) return;
 
-// Bookmark functionality
-document.querySelectorAll('.bookmark-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-        const analysisId = this.dataset.id;
-        
-        fetch(`/bookmark/${analysisId}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                this.classList.toggle('btn-outline-warning');
-                this.classList.toggle('btn-warning');
-                showToast(data.message, 'success');
-            }
+        if (confirm(`Delete ${ids.length} selected analyses? This action cannot be undone.`)) {
+            fetch('/bulk_action', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'delete', analysis_ids: ids })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast(data.message, 'success');
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        showToast(data.message, 'error');
+                    }
+                });
+        }
+    }
+
+    function showToast(message, type) {
+        const toast = document.createElement('div');
+        toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} toast-notification`;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+
+        setTimeout(() => toast.remove(), 3000);
+    }
+
+    // Bookmark functionality
+    document.querySelectorAll('.bookmark-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const analysisId = this.dataset.id;
+
+            fetch(`/bookmark/${analysisId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        this.classList.toggle('btn-outline-warning');
+                        this.classList.toggle('btn-warning');
+                        showToast(data.message, 'success');
+                    }
+                });
         });
     });
-});
+
+    // Apply dynamic widths from data-width attributes
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('[data-width]').forEach(el => {
+            el.style.width = el.dataset.width + '%';
+        });
+    });
 </script>
 
 <style>
-.toast-notification {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 1000;
-    animation: slideIn 0.3s ease;
-}
+    .toast-notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+        animation: slideIn 0.3s ease;
+    }
 
-@keyframes slideIn {
-    from { transform: translateX(100%); }
-    to { transform: translateX(0); }
-}
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+        }
+
+        to {
+            transform: translateX(0);
+        }
+    }
 </style>
 {% endblock %}

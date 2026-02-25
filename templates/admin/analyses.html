@@ -10,7 +10,7 @@
             <p class="text-muted">{{ total }} total analyses</p>
         </div>
     </div>
-    
+
     <!-- Filters -->
     <div class="row mb-4">
         <div class="col-12">
@@ -23,15 +23,15 @@
                         <div class="row">
                             <div class="col-md-3">
                                 <label class="form-label">User Email</label>
-                                <input type="text" class="form-control" name="user" 
-                                       value="{{ user_filter }}" placeholder="Search by email...">
+                                <input type="text" class="form-control" name="user" value="{{ user_filter }}"
+                                    placeholder="Search by email...">
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">Result</label>
                                 <select class="form-select" name="result">
                                     <option value="">All Results</option>
-                                    <option value="Real" {{ 'selected' if result_filter == 'Real' }}>Real</option>
-                                    <option value="Fake" {{ 'selected' if result_filter == 'Fake' }}>Fake</option>
+                                    <option value="Real" {{ 'selected' if result_filter=='Real' }}>Real</option>
+                                    <option value="Fake" {{ 'selected' if result_filter=='Fake' }}>Fake</option>
                                 </select>
                             </div>
                             <div class="col-md-2">
@@ -60,7 +60,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Export Button -->
     <div class="row mb-3">
         <div class="col-12 text-end">
@@ -69,7 +69,7 @@
             </a>
         </div>
     </div>
-    
+
     <!-- Analyses Table -->
     <div class="row">
         <div class="col-12">
@@ -98,7 +98,8 @@
                                     </td>
                                     <td>
                                         <div class="d-flex align-items-center">
-                                            <i class="fas fa-{{ 'image' if analysis.file_type == 'image' else 'video' }} me-2 text-muted"></i>
+                                            <i
+                                                class="fas fa-{{ 'image' if analysis.file_type == 'image' else 'video' }} me-2 text-muted"></i>
                                             <span>{{ analysis.filename }}</span>
                                         </div>
                                     </td>
@@ -106,14 +107,15 @@
                                         <span class="badge bg-secondary">{{ analysis.file_type.upper() }}</span>
                                     </td>
                                     <td>
-                                        <span class="badge bg-{{ 'danger' if analysis.result == 'Fake' else 'success' }}">
+                                        <span
+                                            class="badge bg-{{ 'danger' if analysis.result == 'Fake' else 'success' }}">
                                             {{ analysis.result }}
                                         </span>
                                     </td>
                                     <td>
                                         <div class="confidence-meter mb-1" style="width: 80px;">
-                                            <div class="confidence-fill confidence-{{ 'high' if analysis.confidence > 0.7 else 'medium' if analysis.confidence > 0.4 else 'low' }}" 
-                                                 style="width: {{ analysis.confidence * 100 }}%"></div>
+                                            <div class="confidence-fill confidence-{{ analysis.confidence_level }}"
+                                                data-width='{{ analysis.confidence_percent }}'></div>
                                         </div>
                                         <small>{{ "%.1f"|format(analysis.confidence * 100) }}%</small>
                                     </td>
@@ -123,13 +125,13 @@
                                     </td>
                                     <td>
                                         <div class="btn-group" role="group">
-                                            <a href="{{ url_for('view_analysis', analysis_id=analysis.id) }}" 
-                                               class="btn btn-sm btn-outline-primary" title="View Details">
+                                            <a href="{{ url_for('view_analysis', analysis_id=analysis.id) }}"
+                                                class="btn btn-sm btn-outline-primary" title="View Details">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            <button class="btn btn-sm btn-outline-danger" 
-                                                    onclick="deleteAnalysis({{ analysis.id }}, '{{ analysis.filename }}')"
-                                                    title="Delete Analysis">
+                                            <button class="btn btn-sm btn-outline-danger delete-analysis-btn"
+                                                data-id='{{ analysis.id }}' data-filename='{{ analysis.filename }}'
+                                                title="Delete Analysis">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         </div>
@@ -141,42 +143,44 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Pagination -->
             {% if total_pages > 1 %}
             <nav class="mt-4">
                 <ul class="pagination justify-content-center">
                     {% if has_prev %}
                     <li class="page-item">
-                        <a class="page-link" href="{{ url_for('admin_analyses', page=page-1, **request.args) }}">Previous</a>
+                        <a class="page-link"
+                            href="{{ url_for('admin_analyses', page=page-1, **request.args) }}">Previous</a>
                     </li>
                     {% endif %}
-                    
+
                     {% for p in range(1, total_pages + 1) %}
-                        {% if p == page %}
-                        <li class="page-item active">
-                            <span class="page-link">{{ p }}</span>
-                        </li>
-                        {% elif p <= 3 or p >= total_pages - 2 or (p >= page - 2 and p <= page + 2) %}
-                        <li class="page-item">
-                            <a class="page-link" href="{{ url_for('admin_analyses', page=p, **request.args) }}">{{ p }}</a>
-                        </li>
-                        {% elif p == 4 or p == total_pages - 3 %}
-                        <li class="page-item disabled">
-                            <span class="page-link">...</span>
-                        </li>
-                        {% endif %}
-                    {% endfor %}
-                    
-                    {% if has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="{{ url_for('admin_analyses', page=page+1, **request.args) }}">Next</a>
+                    {% if p == page %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ p }}</span>
                     </li>
-                    {% endif %}
+                    {% elif p <= 3 or p>= total_pages - 2 or (p >= page - 2 and p <= page + 2) %} <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin_analyses', page=p, **request.args) }}">{{ p
+                                }}</a>
+                            </li>
+                            {% elif p == 4 or p == total_pages - 3 %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                            {% endif %}
+                            {% endfor %}
+
+                            {% if has_next %}
+                            <li class="page-item">
+                                <a class="page-link"
+                                    href="{{ url_for('admin_analyses', page=page+1, **request.args) }}">Next</a>
+                            </li>
+                            {% endif %}
                 </ul>
             </nav>
             {% endif %}
-            
+
             {% else %}
             <div class="card">
                 <div class="card-body text-center py-5">
@@ -193,49 +197,71 @@
 
 {% block scripts %}
 <script>
-function deleteAnalysis(analysisId, filename) {
-    if (confirm(`Are you sure you want to delete analysis "${filename}"? This action cannot be undone.`)) {
-        fetch(`/admin/analysis/${analysisId}/delete`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showToast(data.message, 'success');
-                setTimeout(() => location.reload(), 1000);
-            } else {
-                showToast(data.message, 'error');
-            }
-        })
-        .catch(error => {
-            showToast('An error occurred', 'error');
-        });
+    function deleteAnalysis(analysisId, filename) {
+        if (confirm(`Are you sure you want to delete analysis "${filename}"? This action cannot be undone.`)) {
+            fetch(`/admin/analysis/${analysisId}/delete`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast(data.message, 'success');
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        showToast(data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    showToast('An error occurred', 'error');
+                });
+        }
     }
-}
 
-function showToast(message, type) {
-    const toast = document.createElement('div');
-    toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} toast-notification`;
-    toast.textContent = message;
-    document.body.appendChild(toast);
-    
-    setTimeout(() => toast.remove(), 3000);
-}
+    function showToast(message, type) {
+        const toast = document.createElement('div');
+        toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} toast-notification`;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+
+        setTimeout(() => toast.remove(), 3000);
+    }
+
+    // Initializations
+    document.addEventListener('DOMContentLoaded', function () {
+        // Apply dynamic widths from data-width attributes
+        document.querySelectorAll('[data-width]').forEach(el => {
+            el.style.width = el.dataset.width + '%';
+        });
+
+        // Set up analysis deletion event listeners
+        document.querySelectorAll('.delete-analysis-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const id = this.dataset.id;
+                const filename = this.dataset.filename;
+                deleteAnalysis(id, filename);
+            });
+        });
+    });
 </script>
 
 <style>
-.toast-notification {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 1000;
-    animation: slideIn 0.3s ease;
-}
+    .toast-notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+        animation: slideIn 0.3s ease;
+    }
 
-@keyframes slideIn {
-    from { transform: translateX(100%); }
-    to { transform: translateX(0); }
-}
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+        }
+
+        to {
+            transform: translateX(0);
+        }
+    }
 </style>
 {% endblock %}

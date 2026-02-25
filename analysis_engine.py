@@ -8,7 +8,7 @@ import uuid
 import tensorflow as tf
 from tensorflow.keras.applications import Xception
 from tensorflow.keras.models import Sequential, Model
-from tensorflow.keras.layers import Dense, GlobalAveragePooling2D, Dropout, Conv2D, MaxPooling2D, Flatten
+from tensorflow.keras.layers import Dense, GlobalAveragePooling2D, Dropout, Conv2D, MaxPooling2D, Flatten, Input
 from tensorflow.keras.preprocessing.image import img_to_array, load_img
 import cv2
 
@@ -26,7 +26,8 @@ class DeepfakeAnalyzer:
     def _build_cnn_model(self):
         """Build custom CNN model for deepfake detection"""
         model = Sequential([
-            Conv2D(32, (3, 3), activation='relu', input_shape=(224, 224, 3)),
+            Input(shape=(224, 224, 3)),
+            Conv2D(32, (3, 3), activation='relu'),
             MaxPooling2D(2, 2),
             Conv2D(64, (3, 3), activation='relu'),
             MaxPooling2D(2, 2),
@@ -56,6 +57,7 @@ class DeepfakeAnalyzer:
         
         # Add custom classification head
         model = Sequential([
+            Input(shape=(224, 224, 3)),
             base_model,
             GlobalAveragePooling2D(),
             Dense(128, activation='relu'),
@@ -82,7 +84,7 @@ class DeepfakeAnalyzer:
             print(f"Error preprocessing image: {e}")
             return None
     
-    def _extract_video_frames(self, video_path, max_frames=30):
+    def _extract_video_frames(self, video_path, max_frames=60):
         """Extract frames from video for analysis"""
         frames = []
         cap = cv2.VideoCapture(video_path)
@@ -124,8 +126,12 @@ class DeepfakeAnalyzer:
             model_agreement = 1.0 - abs(cnn_pred - xception_pred)
             accuracy = 0.85 + (model_agreement * 0.13)  # Base accuracy + agreement bonus
             
-            result = "Fake" if confidence > 0.5 else "Real"
-            trust_score = self._calculate_trust_score(confidence, accuracy, model_agreement)
+            # Use actual predictions to determine result
+            result = "Fake" if ensemble_pred > 0.5 else "Real"
+            # Ensure confidence reflects the strength of the prediction
+            final_confidence = float(ensemble_pred) if result == "Fake" else float(1.0 - ensemble_pred)
+            
+            trust_score = self._calculate_trust_score(final_confidence, accuracy, model_agreement)
             
             # Generate advanced heatmap using gradient-based attention
             heatmap_data = self._generate_advanced_heatmap(img_array)
@@ -157,8 +163,8 @@ class DeepfakeAnalyzer:
         except Exception as e:
             return self._error_result(str(e))
     
-    def analyze_video(self, file_path, filename):
-        """Analyze video for deepfake detection using frame-by-frame CNN and XceptionNet analysis"""
+    def analyze_video(self, file_path, filename, max_frames=60):
+        """Analyze video for deepfake detection using frame-by-frame analysis"""
         try:
             # Extract frames from video
             frames = self._extract_video_frames(file_path)
@@ -184,14 +190,18 @@ class DeepfakeAnalyzer:
             
             # Overall confidence is weighted average (recent frames matter more)
             weights = np.linspace(0.5, 1.0, len(frame_predictions))
-            confidence = np.average(frame_predictions, weights=weights)
+            ensemble_avg = np.average(frame_predictions, weights=weights)
+            
+            # Use actual predictions to determine result
+            result = "Fake" if ensemble_avg > 0.5 else "Real"
+            # Ensure confidence reflects the strength of the prediction
+            confidence = float(ensemble_avg) if result == "Fake" else float(1.0 - ensemble_avg)
             
             # Calculate model agreement across all frames
             model_agreements = [1.0 - abs(c - x) for c, x in zip(cnn_preds, xception_preds)]
             avg_agreement = np.mean(model_agreements)
             
             accuracy = 0.82 + (avg_agreement * 0.15)
-            result = "Fake" if confidence > 0.5 else "Real"
             trust_score = self._calculate_trust_score(confidence, accuracy, avg_agreement)
             
             # Generate enhanced timeline data
@@ -240,25 +250,23 @@ class DeepfakeAnalyzer:
         return min(trust_score, 1.0)
     
     def _generate_advanced_heatmap(self, img_array):
-        """Generate more realistic heatmap based on model attention"""
-        # Simulate gradient-based attention map
+        """Generate a dynamic heatmap based on simulated model attention"""
         heatmap = []
-        for i in range(14):  # Higher resolution heatmap
+        # Use a higher resolution for more detail
+        for i in range(20):
             row = []
-            for j in range(14):
-                # Simulate attention focusing on facial features
-                center_x, center_y = 7, 7
-                distance = np.sqrt((i - center_x)**2 + (j - center_y)**2)
+            for j in range(20):
+                # Center-focused attention with random local perturbations
+                center_x, center_y = 10, 10
+                dist = np.sqrt((i - center_x)**2 + (j - center_y)**2)
                 
-                # Higher attention in center (face region)
-                if distance < 3:
-                    intensity = random.uniform(0.7, 1.0)
-                elif distance < 5:
-                    intensity = random.uniform(0.4, 0.7)
-                else:
-                    intensity = random.uniform(0.0, 0.3)
+                # Base intensity decreases with distance
+                base_intensity = np.exp(-dist / 8.0)
+                # Add "hotspots" randomly
+                hotspot = 0.3 if random.random() > 0.95 else 0.0
                 
-                row.append(round(intensity, 3))
+                intensity = base_intensity * 0.7 + hotspot + random.uniform(0, 0.2)
+                row.append(min(1.0, round(float(intensity), 3)))
             heatmap.append(row)
         return heatmap
     
@@ -392,16 +400,16 @@ class DeepfakeAnalyzer:
                 cnn_prediction = self.cnn_model.predict(processed_image, verbose=0)[0][0]
                 
                 # Simple thresholding for speed
-                confidence = float(abs(cnn_prediction - 0.5) * 2)  # Convert to confidence
                 result = "Fake" if cnn_prediction > 0.5 else "Real"
+                confidence = float(cnn_prediction) if result == "Fake" else float(1.0 - cnn_prediction)
                 
-                # Calculate trust score (simplified)
-                trust_score = confidence
+                # Calculate trust score (improved)
+                trust_score = self._calculate_trust_score(confidence, 0.8, 0.9)
                 
                 # Prepare analysis data
                 analysis_data = {
                     'models_used': ['CNN-Fast'],
-                    'cnn_confidence': confidence,
+                    'cnn_confidence': float(cnn_prediction),
                     'faces_detected': faces_detected,
                     'face_regions': face_regions,
                     'processing_mode': 'real_time',
@@ -410,7 +418,7 @@ class DeepfakeAnalyzer:
                 
                 return {
                     'confidence': confidence,
-                    'accuracy': min(confidence + 0.1, 1.0),  # Simplified accuracy
+                    'accuracy': 0.8,  # Estimated for fast mode
                     'result': result,
                     'trust_score': trust_score,
                     'analysis_data': json.dumps(analysis_data),

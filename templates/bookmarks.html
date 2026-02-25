@@ -10,7 +10,7 @@
             <p class="text-muted">{{ analyses|length }} bookmarked analyses</p>
         </div>
     </div>
-    
+
     <div class="row mb-3">
         <div class="col-12">
             <a href="{{ url_for('history') }}" class="btn btn-secondary">
@@ -18,7 +18,7 @@
             </a>
         </div>
     </div>
-    
+
     {% if analyses %}
     <div class="row">
         {% for analysis in analyses %}
@@ -38,28 +38,29 @@
                         <div class="col-6">
                             <small class="text-muted">Confidence</small>
                             <div class="confidence-meter mb-2">
-                                <div class="confidence-fill confidence-{{ 'high' if analysis.confidence > 0.7 else 'medium' if analysis.confidence > 0.4 else 'low' }}" 
-                                     style="width: {{ analysis.confidence * 100 }}%"></div>
+                                <div class="confidence-fill confidence-{{ analysis.confidence_level }}"
+                                    data-width="{{ analysis.confidence_percent }}"></div>
                             </div>
                             <strong>{{ "%.1f"|format(analysis.confidence * 100) }}%</strong>
                         </div>
                         <div class="col-6">
                             <small class="text-muted">Trust Score</small>
                             <div class="confidence-meter mb-2">
-                                <div class="confidence-fill confidence-{{ 'high' if analysis.trust_score > 0.7 else 'medium' if analysis.trust_score > 0.4 else 'low' }}" 
-                                     style="width: {{ analysis.trust_score * 100 }}%"></div>
+                                <div class="confidence-fill confidence-{{ analysis.trust_level }}"
+                                    data-width="{{ analysis.trust_score_percent }}"></div>
                             </div>
                             <strong>{{ "%.1f"|format(analysis.trust_score * 100) }}%</strong>
                         </div>
                     </div>
-                    
+
                     <div class="mt-3 d-flex justify-content-between">
                         <div>
                             <span class="badge bg-secondary me-2">{{ analysis.file_type.upper() }}</span>
                             <small class="text-muted">{{ analysis.created_at }}</small>
                         </div>
                         <div>
-                            <a href="{{ url_for('view_analysis', analysis_id=analysis.id) }}" class="btn btn-sm btn-primary">
+                            <a href="{{ url_for('view_analysis', analysis_id=analysis.id) }}"
+                                class="btn btn-sm btn-primary">
                                 <i class="fas fa-eye"></i> View Details
                             </a>
                             <button class="btn btn-sm btn-warning bookmark-btn" data-id="{{ analysis.id }}">
@@ -93,35 +94,42 @@
 
 {% block scripts %}
 <script>
-// Bookmark removal functionality
-document.querySelectorAll('.bookmark-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-        const analysisId = this.dataset.id;
-        
-        if (confirm('Remove this bookmark?')) {
-            fetch(`/bookmark/${analysisId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Remove the card from view
-                    this.closest('.col-lg-6').remove();
-                    
-                    // Update count
-                    const countElement = document.querySelector('.text-muted');
-                    const currentCount = parseInt(countElement.textContent.split(' ')[0]);
-                    countElement.textContent = `${currentCount - 1} bookmarked analyses`;
-                    
-                    // Show empty state if no bookmarks left
-                    if (currentCount - 1 === 0) {
-                        location.reload();
-                    }
-                }
-            });
-        }
+    // Bookmark removal functionality
+    document.querySelectorAll('.bookmark-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const analysisId = this.dataset.id;
+
+            if (confirm('Remove this bookmark?')) {
+                fetch(`/bookmark/${analysisId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Remove the card from view
+                            this.closest('.col-lg-6').remove();
+
+                            // Update count
+                            const countElement = document.querySelector('.text-muted');
+                            const currentCount = parseInt(countElement.textContent.split(' ')[0]);
+                            countElement.textContent = `${currentCount - 1} bookmarked analyses`;
+
+                            // Show empty state if no bookmarks left
+                            if (currentCount - 1 === 0) {
+                                location.reload();
+                            }
+                        }
+                    });
+            }
+        });
     });
-});
+
+    // Apply dynamic widths from data-width attributes
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('[data-width]').forEach(el => {
+            el.style.width = el.dataset.width + '%';
+        });
+    });
 </script>
 {% endblock %}

@@ -7,6 +7,8 @@ from reportlab.graphics.shapes import Drawing
 from reportlab.graphics.charts.linecharts import HorizontalLineChart
 from reportlab.graphics.charts.piecharts import Pie
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 from datetime import datetime, timedelta

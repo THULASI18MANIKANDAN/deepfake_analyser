@@ -3,7 +3,8 @@
 {% block title %}Analytics - Deepfake Analyzer{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
+<div class="container mt-4" id="analytics-data" data-monthly='{{ monthly_data | tojson }}'
+    data-weekly='{{ weekly_data | tojson }}' data-yearly='{{ yearly_data | tojson }}'>
     <div class="row">
         <div class="col-12">
             <nav aria-label="breadcrumb">
@@ -48,7 +49,7 @@
             <div class="card text-center">
                 <div class="card-body">
                     <h5>Average Confidence</h5>
-                    <h3>{{ "%.1f"|format(stats.avg_confidence * 100) }}%</h3>
+                    <h3>{{ "%.1f"|format(stats.avg_confidence * 100) if stats.avg_confidence else '0.0' }}%</h3>
                 </div>
             </div>
         </div>
@@ -96,101 +97,102 @@
 
 {% block scripts %}
 <script>
-const monthlyData = {{ monthly_data | tojson }};
-const weeklyData = {{ weekly_data | tojson }};
-const yearlyData = {{ yearly_data | tojson }};
+    const dataContainer = document.getElementById('analytics-data');
+    const monthlyData = JSON.parse(dataContainer.getAttribute('data-monthly') || '[]');
+    const weeklyData = JSON.parse(dataContainer.getAttribute('data-weekly') || '[]');
+    const yearlyData = JSON.parse(dataContainer.getAttribute('data-yearly') || '[]');
 
-// Monthly chart
-new Chart(document.getElementById('monthlyChart'), {
-    type: 'bar',
-    data: {
-        labels: monthlyData.map(d => d.label),
-        datasets: [
-            {
-                label: 'Fake',
-                data: monthlyData.map(d => d.fake),
-                backgroundColor: 'rgba(255, 99, 132, 0.6)'
-            },
-            {
-                label: 'Real',
-                data: monthlyData.map(d => d.real),
-                backgroundColor: 'rgba(75, 192, 192, 0.6)'
-            }
-        ]
-    },
-    options: {
-        responsive: true,
-        plugins: {
-            title: {
-                display: true,
-                text: 'Monthly Fake vs Real Analysis'
+    // Monthly chart
+    new Chart(document.getElementById('monthlyChart'), {
+        type: 'bar',
+        data: {
+            labels: monthlyData.map(d => d.label),
+            datasets: [
+                {
+                    label: 'Fake',
+                    data: monthlyData.map(d => d.fake),
+                    backgroundColor: 'rgba(255, 99, 132, 0.6)'
+                },
+                {
+                    label: 'Real',
+                    data: monthlyData.map(d => d.real),
+                    backgroundColor: 'rgba(75, 192, 192, 0.6)'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Monthly Fake vs Real Analysis'
+                }
             }
         }
-    }
-});
+    });
 
-// Weekly chart
-new Chart(document.getElementById('weeklyChart'), {
-    type: 'bar',
-    data: {
-        labels: weeklyData.map(d => d.label),
-        datasets: [
-            {
-                label: 'Fake',
-                data: weeklyData.map(d => d.fake),
-                backgroundColor: 'rgba(255, 99, 132, 0.6)'
-            },
-            {
-                label: 'Real',
-                data: weeklyData.map(d => d.real),
-                backgroundColor: 'rgba(75, 192, 192, 0.6)'
-            }
-        ]
-    },
-    options: {
-        responsive: true,
-        plugins: {
-            title: {
-                display: true,
-                text: 'Weekly Fake vs Real Analysis'
+    // Weekly chart
+    new Chart(document.getElementById('weeklyChart'), {
+        type: 'bar',
+        data: {
+            labels: weeklyData.map(d => d.label),
+            datasets: [
+                {
+                    label: 'Fake',
+                    data: weeklyData.map(d => d.fake),
+                    backgroundColor: 'rgba(255, 99, 132, 0.6)'
+                },
+                {
+                    label: 'Real',
+                    data: weeklyData.map(d => d.real),
+                    backgroundColor: 'rgba(75, 192, 192, 0.6)'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Weekly Fake vs Real Analysis'
+                }
             }
         }
-    }
-});
+    });
 
-// Yearly chart
-new Chart(document.getElementById('yearlyChart'), {
-    type: 'line',
-    data: {
-        labels: yearlyData.map(d => d.label),
-        datasets: [
-            {
-                label: 'Fake',
-                data: yearlyData.map(d => d.fake),
-                borderColor: 'rgba(255, 99, 132, 1)',
-                backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                fill: true,
-                tension: 0.1
-            },
-            {
-                label: 'Real',
-                data: yearlyData.map(d => d.real),
-                borderColor: 'rgba(75, 192, 192, 1)',
-                backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                fill: true,
-                tension: 0.1
-            }
-        ]
-    },
-    options: {
-        responsive: true,
-        plugins: {
-            title: {
-                display: true,
-                text: 'Yearly Fake vs Real Trend'
+    // Yearly chart
+    new Chart(document.getElementById('yearlyChart'), {
+        type: 'line',
+        data: {
+            labels: yearlyData.map(d => d.label),
+            datasets: [
+                {
+                    label: 'Fake',
+                    data: yearlyData.map(d => d.fake),
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    fill: true,
+                    tension: 0.1
+                },
+                {
+                    label: 'Real',
+                    data: yearlyData.map(d => d.real),
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    fill: true,
+                    tension: 0.1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Yearly Fake vs Real Trend'
+                }
             }
         }
-    }
-});
+    });
 </script>
 {% endblock %}

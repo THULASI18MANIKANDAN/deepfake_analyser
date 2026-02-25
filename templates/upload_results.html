@@ -10,7 +10,7 @@
             <p class="text-muted">{{ results|length }} files analyzed successfully</p>
         </div>
     </div>
-    
+
     <div class="row mb-3">
         <div class="col-12">
             <a href="{{ url_for('upload') }}" class="btn btn-primary">
@@ -21,7 +21,7 @@
             </a>
         </div>
     </div>
-    
+
     <div class="row">
         {% for result in results %}
         <div class="col-lg-6 mb-4">
@@ -37,21 +37,21 @@
                         <div class="col-6">
                             <small class="text-muted">Confidence</small>
                             <div class="confidence-meter mb-2">
-                                <div class="confidence-fill confidence-{{ 'high' if result.confidence > 0.7 else 'medium' if result.confidence > 0.4 else 'low' }}" 
-                                     style="width: {{ result.confidence * 100 }}%"></div>
+                                <div class="confidence-fill confidence-{{ result.confidence_level }}"
+                                    data-width="{{ result.confidence_percent }}"></div>
                             </div>
                             <strong>{{ "%.1f"|format(result.confidence * 100) }}%</strong>
                         </div>
                         <div class="col-6">
                             <small class="text-muted">Trust Score</small>
                             <div class="confidence-meter mb-2">
-                                <div class="confidence-fill confidence-{{ 'high' if result.trust_score > 0.7 else 'medium' if result.trust_score > 0.4 else 'low' }}" 
-                                     style="width: {{ result.trust_score * 100 }}%"></div>
+                                <div class="confidence-fill confidence-{{ result.trust_level }}"
+                                    data-width="{{ result.trust_score_percent }}"></div>
                             </div>
                             <strong>{{ "%.1f"|format(result.trust_score * 100) }}%</strong>
                         </div>
                     </div>
-                    
+
                     <div class="mt-3">
                         <a href="{{ url_for('view_analysis', analysis_id=result.id) }}" class="btn btn-sm btn-primary">
                             <i class="fas fa-eye"></i> View Details
@@ -65,7 +65,7 @@
         </div>
         {% endfor %}
     </div>
-    
+
     <!-- Summary Statistics -->
     <div class="row mt-4">
         <div class="col-12">
@@ -80,15 +80,18 @@
                             <small class="text-muted">Total Files</small>
                         </div>
                         <div class="col-md-3">
-                            <h4 class="text-success">{{ results|selectattr('result', 'equalto', 'Real')|list|length }}</h4>
+                            <h4 class="text-success">{{ results|selectattr('result', 'equalto', 'Real')|list|length }}
+                            </h4>
                             <small class="text-muted">Real Files</small>
                         </div>
                         <div class="col-md-3">
-                            <h4 class="text-danger">{{ results|selectattr('result', 'equalto', 'Fake')|list|length }}</h4>
+                            <h4 class="text-danger">{{ results|selectattr('result', 'equalto', 'Fake')|list|length }}
+                            </h4>
                             <small class="text-muted">Fake Files</small>
                         </div>
                         <div class="col-md-3">
-                            <h4 class="text-info">{{ "%.1f"|format((results|sum(attribute='confidence') / results|length) * 100) }}%</h4>
+                            <h4 class="text-info">{{ "%.1f"|format((results|sum(attribute='confidence') /
+                                results|length) * 100) }}%</h4>
                             <small class="text-muted">Avg Confidence</small>
                         </div>
                     </div>
@@ -101,55 +104,67 @@
 
 {% block scripts %}
 <script>
-// Bookmark functionality
-document.querySelectorAll('.bookmark-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-        const analysisId = this.dataset.id;
-        
-        fetch(`/bookmark/${analysisId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                this.classList.toggle('btn-outline-warning');
-                this.classList.toggle('btn-warning');
-                
-                // Show toast notification
-                const toast = document.createElement('div');
-                toast.className = 'toast-notification';
-                toast.textContent = data.message;
-                document.body.appendChild(toast);
-                
-                setTimeout(() => {
-                    toast.remove();
-                }, 3000);
-            }
-        })
-        .catch(error => console.error('Error:', error));
+    // Bookmark functionality
+    document.querySelectorAll('.bookmark-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const analysisId = this.dataset.id;
+
+            fetch(`/bookmark/${analysisId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        this.classList.toggle('btn-outline-warning');
+                        this.classList.toggle('btn-warning');
+
+                        // Show toast notification
+                        const toast = document.createElement('div');
+                        toast.className = 'toast-notification';
+                        toast.textContent = data.message;
+                        document.body.appendChild(toast);
+
+                        setTimeout(() => {
+                            toast.remove();
+                        }, 3000);
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        });
     });
-});
+
+    // Apply dynamic widths from data-width attributes
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('[data-width]').forEach(el => {
+            el.style.width = el.dataset.width + '%';
+        });
+    });
 </script>
 
 <style>
-.toast-notification {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background: #28a745;
-    color: white;
-    padding: 10px 20px;
-    border-radius: 5px;
-    z-index: 1000;
-    animation: slideIn 0.3s ease;
-}
+    .toast-notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #28a745;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 5px;
+        z-index: 1000;
+        animation: slideIn 0.3s ease;
+    }
 
-@keyframes slideIn {
-    from { transform: translateX(100%); }
-    to { transform: translateX(0); }
-}
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+        }
+
+        to {
+            transform: translateX(0);
+        }
+    }
 </style>
 {% endblock %}

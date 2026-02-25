@@ -10,7 +10,7 @@
             <p class="text-muted">Welcome back, {{ session.user_email }}!</p>
         </div>
     </div>
-    
+
     <!-- Statistics Cards -->
     <div class="row mb-4">
         <div class="col-md-3">
@@ -28,7 +28,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="col-md-3">
             <div class="card bg-success text-white">
                 <div class="card-body">
@@ -44,7 +44,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="col-md-3">
             <div class="card bg-danger text-white">
                 <div class="card-body">
@@ -60,7 +60,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="col-md-3">
             <div class="card bg-info text-white">
                 <div class="card-body">
@@ -77,7 +77,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Quick Actions -->
     <div class="row mb-4">
         <div class="col-12">
@@ -93,12 +93,12 @@
                             </a>
                         </div>
                         <div class="col-md-4 mb-3">
-                            <a href="#" class="btn btn-success w-100">
+                            <a href="{{ url_for('live_capture') }}" class="btn btn-success w-100">
                                 <i class="fas fa-video"></i> Live Capture
                             </a>
                         </div>
                         <div class="col-md-4 mb-3">
-                            <a href="#" class="btn btn-info w-100">
+                            <a href="{{ url_for('reports_dashboard') }}" class="btn btn-info w-100">
                                 <i class="fas fa-download"></i> Download Reports
                             </a>
                         </div>
@@ -107,7 +107,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Recent Analyses -->
     <div class="row">
         <div class="col-12">
@@ -138,24 +138,27 @@
                                         <span class="badge bg-secondary">{{ analysis.file_type.upper() }}</span>
                                     </td>
                                     <td>
-                                        <span class="badge bg-{{ 'danger' if analysis.result == 'Fake' else 'success' }}">
+                                        <span
+                                            class="badge bg-{{ 'danger' if analysis.result == 'Fake' else 'success' }}">
                                             {{ analysis.result }}
                                         </span>
                                     </td>
                                     <td>
                                         <div class="confidence-meter">
-                                            <div class="confidence-fill confidence-{{ 'high' if analysis.confidence > 0.7 else 'medium' if analysis.confidence > 0.4 else 'low' }}" 
-                                                 style="width: {{ analysis.confidence * 100 }}%"></div>
+                                            <div class="confidence-fill confidence-{{ 'high' if analysis.confidence > 0.7 else 'medium' if analysis.confidence > 0.4 else 'low' }}"
+                                                data-confidence="{{ analysis.confidence * 100 }}"></div>
                                         </div>
                                         <small>{{ "%.1f"|format(analysis.confidence * 100) }}%</small>
                                     </td>
                                     <td>{{ "%.1f"|format(analysis.trust_score * 100) }}%</td>
                                     <td>{{ analysis.created_at }}</td>
                                     <td>
-                                        <a href="{{ url_for('view_analysis', analysis_id=analysis.id) }}" class="btn btn-sm btn-outline-primary" title="View Details">
+                                        <a href="{{ url_for('view_analysis', analysis_id=analysis.id) }}"
+                                            class="btn btn-sm btn-outline-primary" title="View Details">
                                             <i class="fas fa-eye"></i>
                                         </a>
-                                        <button class="btn btn-sm btn-outline-warning bookmark-btn" data-id="{{ analysis.id }}" title="Bookmark">
+                                        <button class="btn btn-sm btn-outline-warning bookmark-btn"
+                                            data-id="{{ analysis.id }}" title="Bookmark">
                                             <i class="fas fa-bookmark"></i>
                                         </button>
                                     </td>
@@ -184,26 +187,34 @@
 
 {% block scripts %}
 <script>
-// Bookmark functionality
-document.querySelectorAll('.bookmark-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-        const analysisId = this.dataset.id;
-        
-        fetch(`/bookmark/${analysisId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                this.classList.toggle('btn-outline-warning');
-                this.classList.toggle('btn-warning');
-            }
-        })
-        .catch(error => console.error('Error:', error));
+    // Initialize confidence meters
+    document.querySelectorAll('.confidence-fill').forEach(el => {
+        const confidence = el.getAttribute('data-confidence');
+        if (confidence) {
+            el.style.width = confidence + '%';
+        }
     });
-});
+
+    // Bookmark functionality
+    document.querySelectorAll('.bookmark-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const analysisId = this.dataset.id;
+
+            fetch(`/bookmark/${analysisId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        this.classList.toggle('btn-outline-warning');
+                        this.classList.toggle('btn-warning');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        });
+    });
 </script>
 {% endblock %}
